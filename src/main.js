@@ -30,8 +30,11 @@ class App {
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
 
-    // オブジェクト作成関数の呼び出し
-    this.createObjects();
+    // 床の作成
+    this.createGround();
+
+    // テスト用のオブジェクトを追加（スポットライトの効果を確認するため）
+    this.addTestObjects();
 
     // スポットライトコントローラーの初期化
     this.spotlightController = new SpotLightController(this.scene, this.renderer);
@@ -46,9 +49,9 @@ class App {
     this.animate();
   }
 
-  createObjects() {
-    // 地面の作成（スポットライトの効果を確認するため）
-    const groundGeometry = new THREE.PlaneGeometry(20, 20);
+  createGround() {
+    // 床の作成
+    const groundGeometry = new THREE.PlaneGeometry(40, 40);
     const groundMaterial = new THREE.MeshStandardMaterial({
       color: 0xcccccc,
       roughness: 0.8,
@@ -58,18 +61,25 @@ class App {
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     this.scene.add(ground);
+  }
 
-    // テスト用の箱を追加
-    const boxGeometry = new THREE.BoxGeometry(2, 4, 2);
-    const boxMaterial = new THREE.MeshStandardMaterial({
-      color: 0x00ff00,
-      roughness: 0.7,
-      metalness: 0.3,
-    });
-    this.box = new THREE.Mesh(boxGeometry, boxMaterial);
-    this.box.position.y = 1;
-    this.box.castShadow = true;
-    this.scene.add(this.box);
+  addTestObjects() {
+    // 複数の箱を配置
+    for (let i = -2; i <= 2; i++) {
+      for (let j = -2; j <= 2; j++) {
+        const boxGeometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+        const boxMaterial = new THREE.MeshStandardMaterial({
+          color: 0x808080,
+          roughness: 0.7,
+          metalness: 0.3,
+        });
+        const box = new THREE.Mesh(boxGeometry, boxMaterial);
+        box.position.set(i * 4, 0.75, j * 4);
+        box.castShadow = true;
+        box.receiveShadow = true;
+        this.scene.add(box);
+      }
+    }
   }
 
   setupGUI() {
@@ -85,9 +95,15 @@ class App {
 
   animate() {
     requestAnimationFrame(this.animate.bind(this));
-    this.controls.update();
-    this.renderer.render(this.scene, this.camera);
+
+    // スポットライトの更新
     this.spotlightController.update();
+
+    // コントロールの更新
+    this.controls.update();
+
+    // シーンのレンダリング
+    this.renderer.render(this.scene, this.camera);
   }
 }
 

@@ -31,6 +31,14 @@ export class SpotLightController {
     // ヘルパーの追加
     this.spotLightHelper = new THREE.SpotLightHelper(this.spotlight);
     scene.add(this.spotLightHelper);
+    // アニメーション用のパラメータ
+    this.animationParams = {
+      enabled: false,
+      radius: 5,
+      height: 10,
+      speed: 1,
+      rotationCenter: new THREE.Vector3(0, 0, 0),
+    };
 
     // パラメータの初期設定
     this.params = {
@@ -43,6 +51,11 @@ export class SpotLightController {
       focus: this.spotlight.shadow.focus,
       shadows: true,
       helper: true,
+      // アニメーション設定
+      animation: this.animationParams.enabled,
+      animationRadius: this.animationParams.radius,
+      animationHeight: this.animationParams.height,
+      animationSpeed: this.animationParams.speed,
       // 位置パラメータ
       positionX: this.spotlight.position.x,
       positionY: this.spotlight.position.y,
@@ -116,6 +129,40 @@ export class SpotLightController {
         this.spotlight.decay = val;
         this.spotLightHelper.update();
       });
+
+    // アニメーション設定
+    const animationFolder = gui.addFolder("Animation Settings");
+
+    animationFolder
+      .add(this.params, "animation")
+      .name("Enable Animation")
+      .onChange(val => {
+        this.animationParams.enabled = val;
+      });
+
+    animationFolder
+      .add(this.params, "animationRadius", 1, 20)
+      .name("Radius")
+      .onChange(val => {
+        this.animationParams.radius = val;
+      });
+
+    animationFolder
+      .add(this.params, "animationHeight", 1, 20)
+      .name("Height")
+      .onChange(val => {
+        this.animationParams.height = val;
+        this.spotlight.position.y = val;
+      });
+
+    animationFolder
+      .add(this.params, "animationSpeed", 0.1, 5)
+      .name("Speed")
+      .onChange(val => {
+        this.animationParams.speed = val;
+      });
+
+    animationFolder.open();
 
     // 位置の制御
     const positionFolder = gui.addFolder("Light Position");
@@ -239,8 +286,28 @@ export class SpotLightController {
   }
 
   update() {
-    // 必要に応じてアップデート処理を追加
-    this.spotLightHelper.update();
-    this.shadowCameraHelper.update();
+    // アニメーションの更新
+    if (this.animationParams.enabled) {
+      const time = (performance.now() / 1000) * this.animationParams.speed;
+
+      // 円周上の移動
+      this.spotlight.position.x =
+        Math.cos(time) * this.animationParams.radius + this.animationParams.rotationCenter.x;
+      this.spotlight.position.z =
+        Math.sin(time) * this.animationParams.radius + this.animationParams.rotationCenter.z;
+      this.spotlight.position.y = this.animationParams.height;
+
+      // スポットライトを常に中心を向くように設定
+      this.spotlight.target.position.set(
+        this.animationParams.rotationCenter.x,
+        0,
+        this.animationParams.rotationCenter.z
+      );
+    }
+
+    // ヘルパーの更新
+    if (this.spotLightHelper) {
+      this.spotLightHelper.update();
+    }
   }
 }
