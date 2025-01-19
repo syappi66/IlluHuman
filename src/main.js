@@ -34,8 +34,8 @@ class App {
     // Create ground
     this.createGround();
 
-    // Add test objects (to check the effect of the spotlight)
-    this.addTestObjects();
+    // [Debug] Add test objects (to check the effect of the spotlight)
+    // this.addTestObjects();
 
     // Initialize spotlight controller
     this.spotlightController = new SpotLightController(this.scene, this.renderer);
