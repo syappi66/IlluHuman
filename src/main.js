@@ -5,52 +5,52 @@ import { SpotLightController } from "./SpotLight";
 
 class App {
   constructor() {
-    // シーンの作成
+    // Create scene
     this.scene = new THREE.Scene();
 
-    // カメラの設定
+    // Camera settings
     this.camera = new THREE.PerspectiveCamera(
-      75, // 視野角（FOV）
-      window.innerWidth / window.innerHeight, // アスペクト比
+      75, // Field of view (FOV)
+      window.innerWidth / window.innerHeight, // Aspect ratio
       0.1, // near plane
       1000 // far plane
     );
     this.camera.position.set(0, 5, 10);
     this.camera.lookAt(0, 0, 0);
 
-    // レンダラーの設定
+    // Renderer settings
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(this.renderer.domElement);
 
-    // OrbitControlsの設定
+    // OrbitControls settings
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
 
-    // 床の作成
+    // Create ground
     this.createGround();
 
-    // テスト用のオブジェクトを追加（スポットライトの効果を確認するため）
+    // Add test objects (to check the effect of the spotlight)
     this.addTestObjects();
 
-    // スポットライトコントローラーの初期化
+    // Initialize spotlight controller
     this.spotlightController = new SpotLightController(this.scene, this.renderer);
 
-    // GUIの設定
+    // GUI settings
     this.setupGUI();
 
-    // ウィンドウリサイズへの対応設定
+    // Handle window resize
     window.addEventListener("resize", this.onWindowResize.bind(this), false);
 
-    // アニメーションの開始
+    // Start animation
     this.animate();
   }
 
   createGround() {
-    // 床の作成
+    // Create ground
     const groundGeometry = new THREE.PlaneGeometry(40, 40);
     const groundMaterial = new THREE.MeshStandardMaterial({
       color: 0xcccccc,
@@ -64,7 +64,7 @@ class App {
   }
 
   addTestObjects() {
-    // 複数の箱を配置
+    // Place multiple boxes
     for (let i = -2; i <= 2; i++) {
       for (let j = -2; j <= 2; j++) {
         const boxGeometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
@@ -96,18 +96,18 @@ class App {
   animate() {
     requestAnimationFrame(this.animate.bind(this));
 
-    // スポットライトの更新
+    // Update spotlight
     this.spotlightController.update();
 
-    // コントロールの更新
+    // Update controls
     this.controls.update();
 
-    // シーンのレンダリング
+    // Render scene
     this.renderer.render(this.scene, this.camera);
   }
 }
 
-// アプリケーションの開始
+// Start application
 window.addEventListener("DOMContentLoaded", () => {
   new App();
 });

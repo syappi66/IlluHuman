@@ -5,7 +5,7 @@ export class SpotLightController {
     this.scene = scene;
     this.renderer = renderer;
 
-    // スポットライトの作成
+    // Create spotlight
     this.spotlight = new THREE.SpotLight(0xffffff, 100);
     this.spotlight.position.set(5, 10, 0);
     this.spotlight.angle = Math.PI / 6;
@@ -13,7 +13,7 @@ export class SpotLightController {
     this.spotlight.decay = 1.5;
     this.spotlight.distance = 50;
 
-    // 影の設定
+    // Shadow settings
     this.spotlight.castShadow = true;
     this.spotlight.shadow.mapSize.width = 1024;
     this.spotlight.shadow.mapSize.height = 1024;
@@ -21,22 +21,22 @@ export class SpotLightController {
     this.spotlight.shadow.camera.far = 60;
     this.spotlight.shadow.focus = 1;
 
-    // スポットライトのターゲット
+    // Spotlight target
     this.spotlight.target.position.set(0, 0, 0);
     scene.add(this.spotlight.target);
     scene.add(this.spotlight);
 
-    // ヘルパーの追加
+    // Add helper
     this.spotLightHelper = new THREE.SpotLightHelper(this.spotlight);
     scene.add(this.spotLightHelper);
-    // アニメーション用のパラメータ
+    // Parameters for animation
     this.animationParams = {
       enabled: false,
       speed: 1,
       rotationCenter: new THREE.Vector3(0, 0, 0),
     };
 
-    // パラメータの初期設定
+    // Initial parameter settings
     this.params = {
       color: this.spotlight.color.getHex(),
       intensity: this.spotlight.intensity,
@@ -48,18 +48,18 @@ export class SpotLightController {
       focus: this.spotlight.shadow.focus,
       shadows: true,
       helper: true,
-      // アニメーション設定
+      // Animation settings
       animation: this.animationParams.enabled,
       animationSpeed: this.animationParams.speed,
-      // 影の品質設定
+      // Shadow quality settings
       shadowMapSize: this.spotlight.shadow.mapSize.width,
       shadowCameraNear: this.spotlight.shadow.camera.near,
       shadowCameraFar: this.spotlight.shadow.camera.far,
-      // 追加の設定
+      // Additional settings
       showFrustum: false,
     };
 
-    // 影用のカメラヘルパー
+    // Camera helper for shadows
     this.shadowCameraHelper = new THREE.CameraHelper(this.spotlight.shadow.camera);
     this.shadowCameraHelper.visible = false;
     scene.add(this.shadowCameraHelper);
@@ -67,7 +67,7 @@ export class SpotLightController {
 
   addToGUI(gui) {
     const spotlightFolder = gui.addFolder("Spotlight Settings");
-    // 基本パラメータ
+    // Basic parameters
     spotlightFolder
       .addColor(this.params, "color")
       .name("Light Color")
@@ -124,7 +124,7 @@ export class SpotLightController {
         this.spotLightHelper.update();
       });
 
-    // アニメーション設定
+    // Animation settings
     const animationFolder = gui.addFolder("Animation Settings");
     animationFolder
       .add(this.params, "animation")
@@ -140,7 +140,7 @@ export class SpotLightController {
         this.animationParams.speed = val;
       });
 
-    // 影の設定
+    // Shadow settings
     const shadowFolder = gui.addFolder("Shadow Settings");
     shadowFolder
       .add(this.params, "shadows")
@@ -190,7 +190,7 @@ export class SpotLightController {
         this.shadowCameraHelper.update();
       });
 
-    // ヘルパーの表示/非表示
+    // Show/hide helpers
     const helperFolder = gui.addFolder("Helpers");
     helperFolder
       .add(this.params, "helper")
@@ -206,7 +206,7 @@ export class SpotLightController {
         this.shadowCameraHelper.visible = val;
       });
 
-    // フォルダーを開いておく
+    // Open folders
     spotlightFolder.open();
     animationFolder.open();
     shadowFolder.open();
@@ -214,15 +214,15 @@ export class SpotLightController {
   }
 
   update() {
-    // アニメーションの更新
+    // Update animation
     if (this.animationParams.enabled) {
       const time = (performance.now() / 1000) * this.animationParams.speed;
 
-      // 固定の円周上の移動
+      // Move in a fixed circle
       this.spotlight.position.x = Math.cos(time) * 5 + this.animationParams.rotationCenter.x;
       this.spotlight.position.z = Math.sin(time) * 5 + this.animationParams.rotationCenter.z;
 
-      // スポットライトを常に中心を向くように設定
+      // Always point the spotlight to the center
       this.spotlight.target.position.set(
         this.animationParams.rotationCenter.x,
         0,
@@ -230,7 +230,7 @@ export class SpotLightController {
       );
     }
 
-    // ヘルパーの更新
+    // Update helper
     if (this.spotLightHelper) {
       this.spotLightHelper.update();
     }
