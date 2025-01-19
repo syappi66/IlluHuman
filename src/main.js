@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { SpotLightController } from "./SpotLight";
 
 class App {
@@ -38,6 +39,29 @@ class App {
 
     // Initialize spotlight controller
     this.spotlightController = new SpotLightController(this.scene, this.renderer);
+
+    // Clock
+    this.clock = new THREE.Clock();
+
+    // GLTF Loader
+    this.loader = new GLTFLoader();
+    this.mixer = null;
+    this.currentModel = null;
+
+    // Models and textures
+    this.models = [
+      "the queen of swords",
+      "treeman",
+      "santa muerte",
+      "ectoparasitoid",
+      "Michelle",
+      "Soldier",
+      "Walking astronaut",
+    ];
+    this.textures = { none: null };
+
+    // Load initial model
+    this.loadModel(this.models[0]);
 
     // GUI settings
     this.setupGUI();
@@ -85,6 +109,51 @@ class App {
   setupGUI() {
     const gui = new GUI();
     this.spotlightController.addToGUI(gui);
+
+    const params = {
+      model: this.models[0],
+      // ...existing spotlight params...
+    };
+
+    gui.add(params, "model", this.models).onChange(value => this.loadModel(value));
+    // ...existing GUI setup...
+  }
+
+  loadModel(modelName) {
+    if (this.currentModel) {
+      this.scene.remove(this.currentModel);
+      this.currentModel.traverse(child => {
+        if (child.isMesh) {
+          child.geometry.dispose();
+          child.material.dispose();
+        }
+      });
+    }
+
+    this.loader.load(`/resources/models/gltf/${modelName}.glb`, gltf => {
+      if (!gltf) {
+        console.error(`Failed to load model: ${modelName}`);
+        return;
+      }
+      this.currentModel = gltf.scene;
+      this.currentModel.traverse(child => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+      this.currentModel.scale.set(1, 1, 1);
+      this.currentModel.position.set(0, 0, 0);
+      this.scene.add(this.currentModel);
+
+      if (gltf.animations && gltf.animations.length > 0) {
+        this.mixer = new THREE.AnimationMixer(this.currentModel);
+        const action = this.mixer.clipAction(gltf.animations[0]);
+        action.play();
+      } else {
+        this.mixer = null;
+      }
+    });
   }
 
   onWindowResize() {
@@ -101,6 +170,10 @@ class App {
 
     // Update controls
     this.controls.update();
+
+    // Update mixer
+    const delta = this.clock.getDelta();
+    if (this.mixer) this.mixer.update(delta);
 
     // Render scene
     this.renderer.render(this.scene, this.camera);
