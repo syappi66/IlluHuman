@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>three.js webgl - lights - spotlight</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link type="text/css" rel="stylesheet" href="main.css">
+</head>
+<body>
+
+<div id="info">
+    <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> webgl - spotlight<br />
+</div>
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "../build/three.module.js",
+            "three/addons/": "./jsm/"
+        }
+    }
+</script>
+
+<script type="module">
+
+    import * as THREE from 'three';
+    import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+    import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    let renderer, scene, camera, mixer;
+    let spotLight, lightHelper;
+    const clock = new THREE.Clock();
+
+    init();
+
+    function init() {
+        // Renderer
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setAnimationLoop(animate);
+        document.body.appendChild(renderer.domElement);
+
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1;
+
+        // Scene
+        scene = new THREE.Scene();
+
+        // Camera
+        camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(7, 4, 1);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.minDistance = 2;
+        controls.maxDistance = 10;
+        controls.maxPolarAngle = Math.PI / 2;
+        controls.target.set(0, 1, 0);
+        controls.update();
+
+        // Lights
+        const ambient = new THREE.HemisphereLight(0xffffff, 0x8d8d8d, 0.15);
+        scene.add(ambient);
+
+        // Load Textures
+        const textureLoader = new THREE.TextureLoader();
+        const groundTexture = textureLoader.load('textures/water.jpg'); // Replace with your texture path
+        groundTexture.wrapS = THREE.RepeatWrapping;
+        groundTexture.wrapT = THREE.RepeatWrapping;
+        groundTexture.repeat.set(10, 10);
+
+        // Ground with Texture
+        const groundGeometry = new THREE.PlaneGeometry(200, 200);
+        const groundMaterial = new THREE.MeshLambertMaterial({ map: groundTexture });
+
+        const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
+        groundMesh.position.set(0, -1, 0);
+        groundMesh.rotation.x = -Math.PI / 2;
+        groundMesh.receiveShadow = true;
+        scene.add(groundMesh);
+
+        // Spotlight
+        spotLight = new THREE.SpotLight(0xffffff, 100);
+        spotLight.position.set(2.5, 5, 2.5);
+        spotLight.angle = Math.PI / 6;
+        spotLight.penumbra = 1;
+        spotLight.decay = 2;
+        spotLight.distance = 0;
+
+        spotLight.castShadow = true;
+        spotLight.shadow.mapSize.width = 1024;
+        spotLight.shadow.mapSize.height = 1024;
+        spotLight.shadow.camera.near = 1;
+        spotLight.shadow.camera.far = 10;
+        spotLight.shadow.focus = 1;
+        scene.add(spotLight);
+
+        lightHelper = new THREE.SpotLightHelper(spotLight);
+        scene.add(lightHelper);
+
+        // Load FBX Model
+        const fbxLoader = new FBXLoader();
+        fbxLoader.load('models/fbx/Erika Archer With.fbx', function (object) {
+            object.traverse(function (child) {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            object.scale.set(0.02, 0.02, 0.02);
+            object.position.set(0, 0, 0);
+            scene.add(object);
+
+            // Setup Animation
+            if (object.animations && object.animations.length > 0) {
+                mixer = new THREE.AnimationMixer(object);
+                const action = mixer.clipAction(object.animations[0]);
+                action.play();
+            }
+        }, undefined, function (error) {
+            console.error('An error occurred while loading the FBX model:', error);
+        });
+
+        window.addEventListener('resize', onWindowResize);
+
+        // GUI
+        const gui = new GUI();
+        const params = {
+            color: spotLight.color.getHex(),
+            intensity: spotLight.intensity,
+            distance: spotLight.distance,
+            angle: spotLight.angle,
+            penumbra: spotLight.penumbra,
+            decay: spotLight.decay,
+            focus: spotLight.shadow.focus,
+            shadows: true
+        };
+
+        gui.addColor(params, 'color').onChange(function (val) {
+            spotLight.color.setHex(val);
+        });
+
+        gui.add(params, 'intensity', 0, 500).onChange(function (val) {
+            spotLight.intensity = val;
+        });
+
+        gui.add(params, 'distance', 0, 20).onChange(function (val) {
+            spotLight.distance = val;
+        });
+
+        gui.add(params, 'angle', 0, Math.PI / 3).onChange(function (val) {
+            spotLight.angle = val;
+        });
+
+        gui.add(params, 'penumbra', 0, 1).onChange(function (val) {
+            spotLight.penumbra = val;
+        });
+
+        gui.add(params, 'decay', 1, 2).onChange(function (val) {
+            spotLight.decay = val;
+        });
+
+        gui.add(params, 'focus', 0, 1).onChange(function (val) {
+            spotLight.shadow.focus = val;
+        });
+
+        gui.add(params, 'shadows').onChange(function (val) {
+            renderer.shadowMap.enabled = val;
+            scene.traverse(function (child) {
+                if (child.material) {
+                    child.material.needsUpdate = true;
+                }
+            });
+        });
+
+        gui.open();
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+        const time = performance.now() / 3000;
+
+        spotLight.position.x = Math.cos(time) * 2.5;
+        spotLight.position.z = Math.sin(time) * 2.5;
+
+        lightHelper.update();
+
+        const delta = clock.getDelta();
+        if (mixer) mixer.update(delta);
+
+        renderer.render(scene, camera);
+    }
+
+</script>
+
+</body>
+</html>

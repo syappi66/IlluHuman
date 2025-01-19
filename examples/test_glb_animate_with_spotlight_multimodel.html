@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - lights - spotlight</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+	</head>
+	<body>
+
+		<div id="info">
+			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> webgl - spotlight<br />
+		</div>
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "../build/three.module.js",
+					"three/addons/": "./jsm/"
+				}
+			}
+		</script>
+
+		<script type="module">
+
+			import * as THREE from 'three';
+			import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+			import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+			let renderer, scene, camera, mixer;
+			let controls, currentModel, loader;
+			let spotLight, lightHelper;
+
+			const clock = new THREE.Clock();
+			const models = [ 'the queen of swords', 'treeman', 'santa muerte', 'ectoparasitoid', 'Michelle','Soldier', 'Walking astronaut'];
+			const textures = { none: null };
+
+			init();
+			animate();
+
+			function init() {
+				// Renderer
+				renderer = new THREE.WebGLRenderer({ antialias: true });
+				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				renderer.setAnimationLoop(animate);
+				renderer.shadowMap.enabled = true;
+				renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+				renderer.toneMapping = THREE.ACESFilmicToneMapping;
+				renderer.toneMappingExposure = 1;
+				document.body.appendChild(renderer.domElement);
+
+				// Scene
+				scene = new THREE.Scene();
+
+				// Camera
+				camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+				camera.position.set(7, 4, 1);
+
+				// Controls
+				controls = new OrbitControls(camera, renderer.domElement);
+				controls.minDistance = 2;
+				controls.maxDistance = 10;
+				controls.maxPolarAngle = Math.PI / 2;
+				controls.target.set(0, 1, 0);
+				controls.update();
+
+				// Lighting
+				const ambient = new THREE.HemisphereLight(0xffffff, 0x8d8d8d, 0.15);
+				scene.add(ambient);
+
+				// SpotLight
+				spotLight = new THREE.SpotLight(0xffffff, 100);
+				spotLight.position.set(2.5, 5, 2.5);
+				spotLight.angle = Math.PI / 6;
+				spotLight.penumbra = 1;
+				spotLight.decay = 2;
+				spotLight.distance = 0;
+				spotLight.castShadow = true;
+				spotLight.shadow.mapSize.width = 1024;
+				spotLight.shadow.mapSize.height = 1024;
+				spotLight.shadow.camera.near = 1;
+				spotLight.shadow.camera.far = 10;
+				spotLight.shadow.focus = 1;
+				scene.add(spotLight);
+
+				lightHelper = new THREE.SpotLightHelper(spotLight);
+				scene.add(lightHelper);
+
+				// Ground
+				const geometry = new THREE.PlaneGeometry(200, 200);
+				const material = new THREE.MeshLambertMaterial({ color: 0xbcbcbc });
+				const mesh = new THREE.Mesh(geometry, material);
+				mesh.position.set(0, 0, 0);
+				mesh.rotation.x = -Math.PI / 2;
+				mesh.receiveShadow = true;
+				scene.add(mesh);
+
+				// Texture loader
+				const textureLoader = new THREE.TextureLoader().setPath('textures/');
+				const filenames = ['disturb.jpg', 'colors.png', 'uv_grid_opengl.jpg', 'water.jpg'];
+
+				filenames.forEach((filename) => {
+					const texture = textureLoader.load(filename);
+					texture.minFilter = THREE.LinearFilter;
+					texture.magFilter = THREE.LinearFilter;
+					texture.generateMipmaps = false;
+					texture.colorSpace = THREE.SRGBColorSpace;
+					textures[filename] = texture;
+				});
+
+				spotLight.map = textures['water.jpg'];
+
+				// GLTF Loader
+				loader = new GLTFLoader();
+
+				// GUI
+				const gui = new GUI();
+				const params = {
+					model: models[0],
+					map: textures['water.jpg'],
+					color: spotLight.color.getHex(),
+					intensity: spotLight.intensity,
+					distance: spotLight.distance,
+					angle: spotLight.angle,
+					penumbra: spotLight.penumbra,
+					decay: spotLight.decay,
+					focus: spotLight.shadow.focus,
+					shadows: true,
+				};
+
+				gui.add(params, 'model', models).onChange((value) => loadModel(value));
+				gui.add(params, 'map', textures).onChange((val) => (spotLight.map = val));
+				gui.addColor(params, 'color').onChange((val) => spotLight.color.setHex(val));
+				gui.add(params, 'intensity', 0, 500).onChange((val) => (spotLight.intensity = val));
+				gui.add(params, 'distance', 0, 20).onChange((val) => (spotLight.distance = val));
+				gui.add(params, 'angle', 0, Math.PI / 3).onChange((val) => (spotLight.angle = val));
+				gui.add(params, 'penumbra', 0, 1).onChange((val) => (spotLight.penumbra = val));
+				gui.add(params, 'decay', 1, 2).onChange((val) => (spotLight.decay = val));
+				gui.add(params, 'focus', 0, 1).onChange((val) => (spotLight.shadow.focus = val));
+				gui.add(params, 'shadows').onChange((val) => {
+					renderer.shadowMap.enabled = val;
+					scene.traverse((child) => {
+						if (child.material) child.material.needsUpdate = true;
+					});
+				});
+
+				gui.open();
+
+				// Initial Model
+				loadModel(models[0]);
+
+				// Resize listener
+				window.addEventListener('resize', onWindowResize);
+			}
+
+			function loadModel(modelName) {
+				if (currentModel) {
+					scene.remove(currentModel);
+					currentModel.traverse((child) => {
+						if (child.isMesh) {
+							child.geometry.dispose();
+							child.material.dispose();
+						}
+					});
+				}
+
+				loader.load(`models/gltf/${modelName}.glb`, (gltf) => {
+					currentModel = gltf.scene;
+					currentModel.traverse((child) => {
+						if (child.isMesh) {
+							child.castShadow = true;
+							child.receiveShadow = true;
+						}
+					});
+					//currentModel.scale.set(0.015, 0.015, 0.015);
+					currentModel.scale.set(1, 1, 1);
+					currentModel.position.set(0, 0, 0);
+					scene.add(currentModel);
+
+					if (gltf.animations && gltf.animations.length > 0) {
+						mixer = new THREE.AnimationMixer(currentModel);
+						const action = mixer.clipAction(gltf.animations[0]);
+						action.play();
+					} else {
+						mixer = null;
+					}
+				});
+			}
+
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+			}
+
+			function animate() {
+				requestAnimationFrame(animate);
+				const time = performance.now() / 3000;
+
+				spotLight.position.x = Math.cos(time) * 2.5;
+				spotLight.position.z = Math.sin(time) * 2.5;
+
+				lightHelper.update();
+
+				const delta = clock.getDelta();
+				if (mixer) mixer.update(delta);
+
+				renderer.render(scene, camera);
+			}
+
+		</script>
+
+	</body>
+</html>
