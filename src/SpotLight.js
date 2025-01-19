@@ -29,12 +29,20 @@ export class SpotLightController {
     // Add helper
     this.spotLightHelper = new THREE.SpotLightHelper(this.spotlight);
     scene.add(this.spotLightHelper);
+
     // Parameters for animation
     this.animationParams = {
       enabled: false,
       speed: 1,
       rotationCenter: new THREE.Vector3(0, 0, 0),
+      lastTime: 0, // Store the last animation time
     };
+
+    // Calculate initial rotation angle based on position
+    const initialRotationAngle = Math.atan2(
+      this.spotlight.position.z - this.animationParams.rotationCenter.z,
+      this.spotlight.position.x - this.animationParams.rotationCenter.x
+    );
 
     // Initial parameter settings
     this.params = {
@@ -43,6 +51,8 @@ export class SpotLightController {
       distance: this.spotlight.distance,
       angle: this.spotlight.angle,
       height: this.spotlight.position.y,
+      rotationRadius: 5,
+      rotationAngle: initialRotationAngle,
       penumbra: this.spotlight.penumbra,
       decay: this.spotlight.decay,
       focus: this.spotlight.shadow.focus,
@@ -59,10 +69,23 @@ export class SpotLightController {
       showFrustum: false,
     };
 
+    // Set initial position based on rotation angle
+    this.updateSpotlightPosition();
+
     // Camera helper for shadows
     this.shadowCameraHelper = new THREE.CameraHelper(this.spotlight.shadow.camera);
     this.shadowCameraHelper.visible = false;
     scene.add(this.shadowCameraHelper);
+  }
+
+  updateSpotlightPosition() {
+    this.spotlight.position.x =
+      this.animationParams.rotationCenter.x +
+      this.params.rotationRadius * Math.cos(this.params.rotationAngle);
+    this.spotlight.position.z =
+      this.animationParams.rotationCenter.z +
+      this.params.rotationRadius * Math.sin(this.params.rotationAngle);
+    this.spotLightHelper.update();
   }
 
   addToGUI(gui) {
@@ -109,6 +132,24 @@ export class SpotLightController {
       });
 
     spotlightFolder
+      .add(this.params, "rotationRadius", 0, 20)
+      .name("Rotation Radius")
+      .onChange(val => {
+        if (!this.animationParams.enabled) {
+          this.updateSpotlightPosition();
+        }
+      });
+
+    spotlightFolder
+      .add(this.params, "rotationAngle", 0, Math.PI * 2)
+      .name("Rotation Angle")
+      .onChange(val => {
+        if (!this.animationParams.enabled) {
+          this.updateSpotlightPosition();
+        }
+      });
+
+    spotlightFolder
       .add(this.params, "penumbra", 0, 1)
       .name("Penumbra")
       .onChange(val => {
@@ -131,6 +172,10 @@ export class SpotLightController {
       .name("Enable Animation")
       .onChange(val => {
         this.animationParams.enabled = val;
+        if (val) {
+          // Store the current time when animation starts
+          this.animationParams.lastTime = performance.now() / 1000;
+        }
       });
 
     animationFolder
@@ -216,11 +261,20 @@ export class SpotLightController {
   update() {
     // Update animation
     if (this.animationParams.enabled) {
-      const time = (performance.now() / 1000) * this.animationParams.speed;
+      const currentTime = performance.now() / 1000;
+      const deltaTime = currentTime - this.animationParams.lastTime;
 
-      // Move in a fixed circle
-      this.spotlight.position.x = Math.cos(time) * 5 + this.animationParams.rotationCenter.x;
-      this.spotlight.position.z = Math.sin(time) * 5 + this.animationParams.rotationCenter.z;
+      // Update rotation angle based on time difference
+      this.params.rotationAngle += deltaTime * this.animationParams.speed;
+
+      // Keep the angle within 0 to 2π
+      this.params.rotationAngle %= Math.PI * 2;
+
+      // Update spotlight position based on current angle
+      this.updateSpotlightPosition();
+
+      // Update last time
+      this.animationParams.lastTime = currentTime;
 
       // Always point the spotlight to the center
       this.spotlight.target.position.set(
