@@ -85,6 +85,7 @@
 				spotLight.shadow.camera.near = 1;
 				spotLight.shadow.camera.far = 10;
 				spotLight.shadow.focus = 1;
+				spotLight.position.set(0, 5, 0);
 				scene.add(spotLight);
 
 				lightHelper = new THREE.SpotLightHelper(spotLight);
@@ -129,61 +130,74 @@
 					penumbra: spotLight.penumbra,
 					decay: spotLight.decay,
 					focus: spotLight.shadow.focus,
+					position: spotLight.position,
 					shadows: true,
 					roughness: 0.5,
 					metalness: 0.5,
 					reflection: 0.5, // 反射の追加
 				};
+				const modelFolder = gui.addFolder('Model');
+				const modalFolderColor = '#ffcccc';
+				modelFolder.domElement.style.backgroundColor = modalFolderColor;
+				modelFolder.domElement.style.color = '#000';
+				modelFolder.domElement.addEventListener('mouseover', () => {
+					modelFolder.domElement.style.backgroundColor = '#ff9999';
+				});
+				modelFolder.domElement.addEventListener('mouseout', () => {
+					modelFolder.domElement.style.backgroundColor = modalFolderColor;
+				});
+				modelFolder.add(params, 'model', models).onChange((value) => loadModel(value));
+				modelFolder.add(params, 'map', textures).onChange((val) => (spotLight.map = val));
+				
+				const lightFolder = gui.addFolder('SpotLight');
+				const lightFolderColor = '#ccffff';
+				lightFolder.domElement.style.backgroundColor = lightFolderColor;
+				lightFolder.domElement.style.color = '#000';
+				lightFolder.domElement.addEventListener('mouseover', () => {
+					lightFolder.domElement.style.backgroundColor = '#99ffff';
+				});
+				lightFolder.domElement.addEventListener('mouseout', () => {
+					lightFolder.domElement.style.backgroundColor = lightFolderColor;
+				});
+				lightFolder.addColor(params, 'color').onChange((val) => spotLight.color.setHex(val));
+				lightFolder.add(params, 'intensity', 0, 500).onChange((val) => (spotLight.intensity = val));
+				lightFolder.add(params, 'distance', 0, 20).onChange((val) => (spotLight.distance = val));
+				lightFolder.add(params, 'angle', 0, Math.PI / 3).onChange((val) => (spotLight.angle = val));
+				lightFolder.add(params, 'penumbra', 0, 1).onChange((val) => (spotLight.penumbra = val));
+				lightFolder.add(params, 'decay', 1, 2).onChange((val) => (spotLight.decay = val));
+				lightFolder.add(params, 'focus', 0, 1).onChange((val) => (spotLight.shadow.focus = val));
+				lightFolder.add(params.position, 'x', -50, 50, 1);
+				lightFolder.add(params.position, 'y', -50, 50, 1);
+				lightFolder.add(params.position, 'z', -50, 50, 1);
 
-				gui.add(params, 'model', models).onChange((value) => loadModel(value));
-				gui.add(params, 'map', textures).onChange((val) => (spotLight.map = val));
-				gui.addColor(params, 'color').onChange((val) => spotLight.color.setHex(val));
-				gui.add(params, 'intensity', 0, 500).onChange((val) => (spotLight.intensity = val));
-				gui.add(params, 'distance', 0, 20).onChange((val) => (spotLight.distance = val));
-				gui.add(params, 'angle', 0, Math.PI / 3).onChange((val) => (spotLight.angle = val));
-				gui.add(params, 'penumbra', 0, 1).onChange((val) => (spotLight.penumbra = val));
-				gui.add(params, 'decay', 1, 2).onChange((val) => (spotLight.decay = val));
-				gui.add(params, 'focus', 0, 1).onChange((val) => (spotLight.shadow.focus = val));
-				gui.add(params, 'shadows').onChange((val) => {
+				const shadowFolder = gui.addFolder('Shadow');
+				const shadowFolderColor = '#cccccc';
+				shadowFolder.domElement.style.backgroundColor = shadowFolderColor;
+				shadowFolder.domElement.style.color = '#000';
+				shadowFolder.domElement.addEventListener('mouseover', () => {
+					shadowFolder.domElement.style.backgroundColor = '#999999';
+				});
+				shadowFolder.domElement.addEventListener('mouseout', () => {
+					shadowFolder.domElement.style.backgroundColor = shadowFolderColor;
+				});
+				shadowFolder.add(params, 'shadows').onChange((val) => {
 					renderer.shadowMap.enabled = val;
 					scene.traverse((child) => {
 						if (child.material) child.material.needsUpdate = true;
 					});
 				});
 
-				// Adding Roughness, Metalness, and Reflection to the GUI
-				gui.add(params, 'roughness', 0, 1).onChange((val) => {
-					if (currentModel) {
-						currentModel.traverse((child) => {
-							if (child.isMesh) {
-								child.material.roughness = val;
-							}
-						});
-					}
-				});
-				gui.add(params, 'metalness', 0, 1).onChange((val) => {
-					if (currentModel) {
-						currentModel.traverse((child) => {
-							if (child.isMesh) {
-								child.material.metalness = val;
-							}
-						});
-					}
-				});
-
-				// 反射強度の設定
-				gui.add(params, 'reflection', 0, 1).onChange((val) => {
-					if (currentModel) {
-						currentModel.traverse((child) => {
-							if (child.isMesh) {
-								child.material.reflectivity = val;
-							}
-						});
-					}
-				});
-
 				// Add SSS Section Title
 				const sssFolder = gui.addFolder('SSS');
+				const sssFolderColor = '#ffccff';
+				sssFolder.domElement.style.backgroundColor = sssFolderColor;
+				sssFolder.domElement.style.color = '#000';
+				sssFolder.domElement.addEventListener('mouseover', () => {
+					sssFolder.domElement.style.backgroundColor = '#ff99ff';
+				});
+				sssFolder.domElement.addEventListener('mouseout', () => {
+					sssFolder.domElement.style.backgroundColor = sssFolderColor;
+				});
 				sssFolder.add(params, 'reflection', 0, 1).onChange((val) => {
 					if (currentModel) {
 						currentModel.traverse((child) => {
@@ -213,8 +227,10 @@
 				});
 
 				// Adding SSS Section
+				modelFolder.open();
+				lightFolder.open();
+				shadowFolder.open();
 				sssFolder.open();
-
 				gui.open();
 
 				// Initial Model
