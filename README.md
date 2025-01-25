@@ -44,14 +44,17 @@ To install IlluHuman, follow these steps:
 ## Development
 
 To run the development server, use the following command:
-
 ```bash
 npm run dev
+```
+To build the project in the /dist folder, run the following command:
+```bash
+npm run build
 ```
 
 # Resource
 
-## Human Models
+<strong>Human Models</strong>
 - **Treeman:** [Sketchfab Link](https://skfb.ly/6ByIz)
 - **Ectoparasitoid:** [Sketchfab Link](https://skfb.ly/p7YON)
 - **Astronaut:** [Sketchfab Link](https://skfb.ly/o9nHu)
@@ -59,7 +62,7 @@ npm run dev
 - **Santa Muerte:** [Sketchfab Link](https://skfb.ly/prVXB)
 - **Michelle&Soldier:** [Mixamo](https://www.mixamo.com/)
 
-## Background
+<strong>Background</strong>
 - **Space Background:** [Blue Nebulae Spheremaps](https://www.spacespheremaps.com/blue-nebulae-spheremaps/)
 - **Cloud Morning Bluesky:** [Blenderkit Link](https://www.blenderkit.com/asset-gallery-detail/ce9a011a-a4dc-44e6-b462-17c8adbb0335/)
 
