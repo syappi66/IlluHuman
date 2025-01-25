@@ -61,7 +61,7 @@ npm run dev
 
 ## Background
 - **Space Background:** [Blue Nebulae Spheremaps](https://www.spacespheremaps.com/blue-nebulae-spheremaps/)
-- **Cloud Morning Bluesky** [Blenderkit Link](https://www.blenderkit.com/asset-gallery-detail/ce9a011a-a4dc-44e6-b462-17c8adbb0335/)
+- **Cloud Morning Bluesky:** [Blenderkit Link](https://www.blenderkit.com/asset-gallery-detail/ce9a011a-a4dc-44e6-b462-17c8adbb0335/)
 
 ## Demo
 
