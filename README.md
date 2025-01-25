@@ -65,7 +65,7 @@ npm run dev
 
 ## Demo
 
-TODO: Add demo page.
+https://syappi66.github.io/IlluHuman/
 
 ## License
 
