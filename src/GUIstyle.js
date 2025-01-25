@@ -27,7 +27,6 @@ export class GuiStyler {
     static applyStyleRecursively(folder, backgroundColor, hoverColor, textColor, hoverTextColor) {
         // Apply style to the current folder
         GuiStyler.applyStyle(folder, backgroundColor, hoverColor, textColor, hoverTextColor);
-        // console.log("folder", folder);
 
         // Recursively apply styles to nested folders
         if (folder.folders && typeof folder.folders === "object") {
@@ -44,16 +43,16 @@ export class GuiStyler {
 
             switch (folderTitle) {
                 case "Spotlight 1":
-                    GuiStyler.applyStyleRecursively(folder, "#C6E2FF", "#A8D4FF", "#232A3E", "#121A28"); // 柔和的清爽淡蓝
+                    GuiStyler.applyStyleRecursively(folder, "#C6E2FF", "#A8D4FF", "#232A3E", "#121A28"); // Soft and refreshing light blue
                     break;
                 case "Spotlight 2":
-                    GuiStyler.applyStyleRecursively(folder, "#C6FFF1", "#A8FFE4", "#233A3A", "#121E1E"); // 柔和的淡薄荷绿
+                    GuiStyler.applyStyleRecursively(folder, "#C6FFF1", "#A8FFE4", "#233A3A", "#121E1E"); // Gentle and pale mint green
                     break;
                 case "Model":
-                    GuiStyler.applyStyleRecursively(folder, "#D1DEFF", "#B3C8FF", "#242C3F", "#131822"); // 淡雅的柔紫蓝
+                    GuiStyler.applyStyleRecursively(folder, "#D1DEFF", "#B3C8FF", "#242C3F", "#131822"); // Elegant and soft purple-blue
                     break;
                 case "Subsurface Scattering":
-                    GuiStyler.applyStyleRecursively(folder, "#C6EEFF", "#A8E4FF", "#233340", "#121B26"); // 清淡的浅天蓝
+                    GuiStyler.applyStyleRecursively(folder, "#C6EEFF", "#A8E4FF", "#233340", "#121B26"); // Subtle and light sky blue
                     break;
                 default:
                     console.log(`No specific style applied for folder: ${folderTitle}`);

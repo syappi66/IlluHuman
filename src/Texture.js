@@ -13,7 +13,7 @@ export class TextureController {
   }
 
   preloadTextures() {
-    const textureLoader = new THREE.TextureLoader().setPath("/resources/textures/");
+    const textureLoader = new THREE.TextureLoader().setPath("./resources/textures/");
     const filenames = ["disturb.jpg", "water.jpg"];
 
     filenames.forEach((filename) => {
@@ -34,7 +34,7 @@ export class TextureController {
     const backgroundNames = ["Cloud Morning Bluesky", "Blue Local Star"];
 
     backgroundNames.forEach((filename) => {
-      const texture = rgbeloader.load(`/resources/textures/equirectangular/${filename}.hdr`);
+      const texture = rgbeloader.load(`./resources/textures/equirectangular/${filename}.hdr`);
       this.backgrounds[filename] = texture;
     });
   

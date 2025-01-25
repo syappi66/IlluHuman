@@ -4,7 +4,6 @@ import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { SpotLightController } from "./SpotLight";
 import { TextureController } from "./Texture";
-import { SSSGuiController } from "./SSSGui";
 import { GuiStyler } from "./GUIStyle";
 
 
@@ -66,10 +65,8 @@ class App {
     });
 
 
-
     // Initialize Texture Controller
     this.textureController = new TextureController(this.renderer);
-
 
     // Clock
     this.clock = new THREE.Clock();
@@ -81,21 +78,21 @@ class App {
 
     // Models and textures
     this.models = [
+      "Wave hand astronaut",
       "the queen of swords",
       "treeman",
       "santa muerte",
       "ectoparasitoid",
       "Michelle",
       "Soldier",
-      "Walking astronaut",
-      "Wave hand astronaut"
+      "Walking astronaut"
     ];
-
-    // Load initial model
-    this.loadModel(this.models[0]);
 
     // GUI settings
     this.setupGUI();
+
+    // Load initial model
+    this.loadModel(this.models[0]);
 
     // Handle window resize
     window.addEventListener("resize", this.onWindowResize.bind(this), false);
@@ -149,9 +146,38 @@ class App {
     modelFolder.add(params, "Background", Object.keys(backgrounds)).onChange((value) => {
       this.textureController.switchBackground(this.scene, value);
     });
+    modelFolder.open()
 
-    //SSS setting in GUI
-    this.sssGuiController = new SSSGuiController(gui, this.currentModel);
+    //SSS
+    const sssFolder = gui.addFolder('Subsurface Scattering');
+    sssFolder.add(params, 'reflection', 0, 1).onChange((val) => {
+        if (this.currentModel) {
+            this.currentModel.traverse((child) => {
+                if (child.isMesh) {
+                    child.material.reflection = val;
+                }
+            });
+        }
+    });
+    sssFolder.add(params, 'roughness', 0, 1).onChange((val) => {
+        if (this.currentModel) {
+            this.currentModel.traverse((child) => {
+                if (child.isMesh) {
+                    child.material.roughness = val;
+                }
+            });
+        }
+    });
+    sssFolder.add(params, 'metalness', 0, 1).onChange((val) => {
+        if (this.currentModel) {
+            this.currentModel.traverse((child) => {
+                if (child.isMesh) {
+                    child.material.metalness = val;
+                }
+            });
+        }
+    });
+    sssFolder.open()
     
     //GUI style
     GuiStyler.styleExistingFolders(gui);
@@ -170,7 +196,7 @@ class App {
       });
     }
 
-    this.loader.load(`/resources/models/gltf/${modelName}.glb`, (gltf) => {
+    this.loader.load(`./resources/models/gltf/${modelName}.glb`, (gltf) => {
       if (!gltf) {
         console.error(`Failed to load model: ${modelName}`);
         return;
