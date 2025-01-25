@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - lights - spotlight</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+	</head>
+	<body>
+
+		<div id="info">
+			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> webgl - spotlight<br />
+			<!-- Title for SSS Section -->
+			<strong>SSS Section: Lighting Setup and Material Control</strong><br />
+		</div>
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "../node_modules/three/build/three.module.js",
+					"three/addons/": "../node_modules/three/examples/jsm/"
+				}
+			}
+		</script>
+
+		<script type="module">
+
+			import * as THREE from 'three';
+			import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+			import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+			import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+			import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
+			
+			
+
+			let renderer, scene, camera, mixer;
+			let controls, currentModel, loader;
+			let spotLight, lightHelper;
+
+			const clock = new THREE.Clock();
+			const models = [ 'the queen of swords', 'treeman', 'santa muerte', 'Michelle','Soldier', 'Walking astronaut'];
+			const textures = { none: null };
+			const backgrounds = { none: null };
+
+
+			init();
+			animate();
+
+			function init() {
+				// Renderer
+				renderer = new THREE.WebGLRenderer({ antialias: true });
+				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				renderer.setAnimationLoop(animate);
+				renderer.shadowMap.enabled = true;
+				renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+				renderer.toneMapping = THREE.ACESFilmicToneMapping;
+				renderer.toneMappingExposure = 1;
+				document.body.appendChild(renderer.domElement);
+				
+
+				// Scene
+				scene = new THREE.Scene();
+
+				// Camera
+				camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+				camera.position.set(7, 4, 1);
+
+
+				// Controls
+				controls = new OrbitControls(camera, renderer.domElement);
+				controls.minDistance = 2;
+				controls.maxDistance = 10;
+				controls.maxPolarAngle = Math.PI / 2;
+				controls.target.set(0, 1, 0);
+				controls.update();
+
+
+
+				// Lighting
+				const ambient = new THREE.HemisphereLight(0xffffff, 0x8d8d8d, 0.15);
+				scene.add(ambient);
+
+				// SpotLight
+				spotLight = new THREE.SpotLight(0xffffff, 100);
+				spotLight.position.set(2.5, 5, 2.5);
+				spotLight.angle = Math.PI / 6;
+				spotLight.penumbra = 1;
+				spotLight.decay = 2;
+				spotLight.distance = 0;
+				spotLight.castShadow = true;
+				spotLight.shadow.mapSize.width = 1024;
+				spotLight.shadow.mapSize.height = 1024;
+				spotLight.shadow.camera.near = 1;
+				spotLight.shadow.camera.far = 10;
+				spotLight.shadow.focus = 1;
+				spotLight.position.set(0, 5, 0);
+				scene.add(spotLight);
+
+				lightHelper = new THREE.SpotLightHelper(spotLight);
+				scene.add(lightHelper);
+
+				// Ground
+				const geometry = new THREE.PlaneGeometry(30, 30);
+				const material = new THREE.MeshLambertMaterial({ color: 0x606060});
+				const mesh = new THREE.Mesh(geometry, material);
+				mesh.position.set(0, 0, 0);
+				mesh.rotation.x = -Math.PI / 2;
+				mesh.receiveShadow = true;
+				scene.add(mesh);
+
+				// Texture loader
+				const textureLoader = new THREE.TextureLoader().setPath('../resources/textures/');
+				const filenames = ['disturb.jpg', 'colors.png', 'uv_grid_opengl.jpg', 'water.jpg'];
+
+				filenames.forEach((filename) => {
+					const texture = textureLoader.load(filename);
+					texture.minFilter = THREE.LinearFilter;
+					texture.magFilter = THREE.LinearFilter;
+					texture.generateMipmaps = false;
+					texture.colorSpace = THREE.SRGBColorSpace;
+					textures[filename] = texture;
+				});
+                
+				// Background loader
+				const pmremGenerator = new THREE.PMREMGenerator( renderer );
+				pmremGenerator.compileEquirectangularShader();
+
+				const rgbeloader = new RGBELoader();
+				const backgroundnames = ['Cloud Morning Bluesky', 'Blue Local Star'];
+
+				backgroundnames.forEach((filename) => {
+					const texture = rgbeloader.load( `../resources/textures/equirectangular/${filename}.hdr`);
+					backgrounds[filename] = texture;
+				});
+
+
+				spotLight.map = textures['water.jpg'];
+
+				
+				scene.background = new THREE.Color(0, 0, 0); // Set black background
+				scene.environment = new THREE.Color(0, 0, 0); // Disable environment reflection
+
+				// GLTF Loader
+				loader = new GLTFLoader();
+
+				// GUI
+				const gui = new GUI();
+				const params = {
+					model: models[0],
+					map: textures['water.jpg'],
+					background: 'none',
+					color: spotLight.color.getHex(),
+					intensity: spotLight.intensity,
+					distance: spotLight.distance,
+					angle: spotLight.angle,
+					penumbra: spotLight.penumbra,
+					decay: spotLight.decay,
+					focus: spotLight.shadow.focus,
+					position: spotLight.position,
+					shadows: true,
+					roughness: 0.5,
+					metalness: 0.5,
+					reflection: 0.5, // 反射の追加
+				};
+
+
+				const modelFolder = gui.addFolder('Model');
+				const modalFolderColor = '#ffcccc';
+				modelFolder.domElement.style.backgroundColor = modalFolderColor;
+				modelFolder.domElement.style.color = '#000';
+				modelFolder.domElement.addEventListener('mouseover', () => {
+					modelFolder.domElement.style.backgroundColor = '#ff9999';
+				});
+				modelFolder.domElement.addEventListener('mouseout', () => {
+					modelFolder.domElement.style.backgroundColor = modalFolderColor;
+				});
+				modelFolder.add(params, 'model', models).onChange((val) => loadModel(val));
+				modelFolder.add(params, 'map', textures).onChange((val) => (spotLight.map = val));
+				modelFolder.add(params, 'background', backgrounds).onChange((val) => (switchBackground(val)));
+
+
+				const lightFolder = gui.addFolder('SpotLight');
+				const lightFolderColor = '#ccffff';
+				lightFolder.domElement.style.backgroundColor = lightFolderColor;
+				lightFolder.domElement.style.color = '#000';
+				lightFolder.domElement.addEventListener('mouseover', () => {
+					lightFolder.domElement.style.backgroundColor = '#99ffff';
+				});
+				lightFolder.domElement.addEventListener('mouseout', () => {
+					lightFolder.domElement.style.backgroundColor = lightFolderColor;
+				});
+				lightFolder.addColor(params, 'color').onChange((val) => spotLight.color.setHex(val));
+				lightFolder.add(params, 'intensity', 0, 500).onChange((val) => (spotLight.intensity = val));
+				lightFolder.add(params, 'distance', 0, 20).onChange((val) => (spotLight.distance = val));
+				lightFolder.add(params, 'angle', 0, Math.PI / 3).onChange((val) => (spotLight.angle = val));
+				lightFolder.add(params, 'penumbra', 0, 1).onChange((val) => (spotLight.penumbra = val));
+				lightFolder.add(params, 'decay', 1, 2).onChange((val) => (spotLight.decay = val));
+				lightFolder.add(params, 'focus', 0, 1).onChange((val) => (spotLight.shadow.focus = val));
+				lightFolder.add(params.position, 'x', -50, 50, 1);
+				lightFolder.add(params.position, 'y', -50, 50, 1);
+				lightFolder.add(params.position, 'z', -50, 50, 1);
+
+
+
+				const shadowFolder = gui.addFolder('Shadow');
+				const shadowFolderColor = '#cccccc';
+				shadowFolder.domElement.style.backgroundColor = shadowFolderColor;
+				shadowFolder.domElement.style.color = '#000';
+				shadowFolder.domElement.addEventListener('mouseover', () => {
+					shadowFolder.domElement.style.backgroundColor = '#999999';
+				});
+				shadowFolder.domElement.addEventListener('mouseout', () => {
+					shadowFolder.domElement.style.backgroundColor = shadowFolderColor;
+				});
+				shadowFolder.add(params, 'shadows').onChange((val) => {
+					renderer.shadowMap.enabled = val;
+					scene.traverse((child) => {
+						if (child.material) child.material.needsUpdate = true;
+					});
+				});
+
+				// Add SSS Section Title
+				const sssFolder = gui.addFolder('SSS');
+				const sssFolderColor = '#ffccff';
+				sssFolder.domElement.style.backgroundColor = sssFolderColor;
+				sssFolder.domElement.style.color = '#000';
+				sssFolder.domElement.addEventListener('mouseover', () => {
+					sssFolder.domElement.style.backgroundColor = '#ff99ff';
+				});
+				sssFolder.domElement.addEventListener('mouseout', () => {
+					sssFolder.domElement.style.backgroundColor = sssFolderColor;
+				});
+				sssFolder.add(params, 'reflection', 0, 1).onChange((val) => {
+					if (currentModel) {
+						currentModel.traverse((child) => {
+							if (child.isMesh) {
+								child.material.reflection = val;
+							}
+						});
+					}
+				});
+				sssFolder.add(params, 'roughness', 0, 1).onChange((val) => {
+					if (currentModel) {
+						currentModel.traverse((child) => {
+							if (child.isMesh) {
+								child.material.roughness = val;
+							}
+						});
+					}
+				});
+				sssFolder.add(params, 'metalness', 0, 1).onChange((val) => {
+					if (currentModel) {
+						currentModel.traverse((child) => {
+							if (child.isMesh) {
+								child.material.metalness = val;
+							}
+						});
+					}
+				});
+
+				
+
+				// Adding SSS Section
+				modelFolder.open();
+				lightFolder.open();
+				shadowFolder.open();
+				sssFolder.open();
+				gui.open();
+
+				// Initial Model
+				loadModel(models[0]);
+				//switchBackground(backgrounds[0]);
+
+				// Resize listener
+				window.addEventListener('resize', onWindowResize);
+			}
+
+			function switchBackground(texture) {
+				if (texture){
+					const pmremGenerator = new THREE.PMREMGenerator( renderer );
+					pmremGenerator.compileEquirectangularShader();
+					const renderTarget = pmremGenerator.fromEquirectangular(texture);
+					scene.environment = renderTarget.texture; 
+					scene.background = renderTarget.texture; 
+				}
+				else{
+					scene.background = new THREE.Color(0, 0, 0); // Set black background
+					scene.environment = new THREE.Color(0, 0, 0); // Disable environment reflection
+				}
+
+			}
+
+
+
+			function loadModel(modelName) {
+				if (currentModel) {
+					scene.remove(currentModel);
+					currentModel.traverse((child) => {
+						if (child.isMesh) {
+							child.geometry.dispose();
+							child.material.dispose();
+						}
+					});
+				}
+
+				loader.load(`../resources/models/gltf/${modelName}.glb`, (gltf) => {
+					currentModel = gltf.scene;
+					currentModel.traverse((child) => {
+						if (child.isMesh) {
+							child.castShadow = true;
+							child.receiveShadow = true;
+						}
+					});
+					currentModel.scale.set(1, 1, 1);
+					currentModel.position.set(0, 0, 0);
+					scene.add(currentModel);
+
+					if (gltf.animations && gltf.animations.length > 0) {
+						mixer = new THREE.AnimationMixer(currentModel);
+						const action = mixer.clipAction(gltf.animations[0]);
+						action.play();
+					} else {
+						mixer = null;
+					}
+				});
+			}
+
+			function animate() {
+				requestAnimationFrame(animate);
+
+				if (mixer) mixer.update(clock.getDelta());
+
+				renderer.render(scene, camera);
+			}
+
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+			}
+
+		</script>
+	</body>
+</html>
