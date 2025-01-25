@@ -3,7 +3,7 @@
 Welcome to the IlluHuman project!
 
 This project aims to create an interactive 3D scene using Three.js that features the following elements:
-(1) **Walking Human Animation**: A scene where a human model walks, based on the example from Three.js Skinning Animation.
+(1) **Human Animation**: A scene where a human model moves, based on the example from Three.js Skinning Animation.
 (2) **Additional 3D Human Models**: Change to another 3D character model sourced from platforms like Mixamo and Sketchfab.
 (3) **Dynamic Lighting with Spotlight**: A spotlight system, inspired by the Three.js Spotlight Example, will illuminate the models. The spotlight parameters (e.g., intensity, angle, and color) will be adjustable in real time.
 (4) **Subsurface Scattering (SSS) Effects**: Implementation of subsurface scattering effects on the human models to simulate realistic skin rendering. The parameters for SSS will be adjustable, similar to the functionality demonstrated in ShaderToy’s SSS example.
