@@ -88,6 +88,7 @@ class App {
       "Michelle",
       "Soldier",
       "Walking astronaut",
+      "Wave hand astronaut"
     ];
 
     // Load initial model
