@@ -14,10 +14,9 @@ This project aims to create an interactive 3D scene using Three.js that features
   - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
   - [Development](#development)
-  - [Resource](#resource)
+- [Resource](#resource)
   - [Demo](#demo)
   - [License](#license)
-
 
 ## Installation
 
@@ -44,10 +43,13 @@ To install IlluHuman, follow these steps:
 ## Development
 
 To run the development server, use the following command:
+
 ```bash
 npm run dev
 ```
+
 To build the project in the /dist folder, run the following command:
+
 ```bash
 npm run build
 ```
@@ -55,6 +57,7 @@ npm run build
 # Resource
 
 <strong>Human Models</strong>
+
 - **Treeman:** [Sketchfab Link](https://skfb.ly/6ByIz)
 - **Ectoparasitoid:** [Sketchfab Link](https://skfb.ly/p7YON)
 - **Astronaut:** [Sketchfab Link](https://skfb.ly/o9nHu)
@@ -63,13 +66,14 @@ npm run build
 - **Michelle&Soldier:** [Mixamo](https://www.mixamo.com/)
 
 <strong>Background</strong>
+
 - **Space Background:** [Blue Nebulae Spheremaps](https://www.spacespheremaps.com/blue-nebulae-spheremaps/)
 - **Cloud Morning Bluesky:** [Blenderkit Link](https://www.blenderkit.com/asset-gallery-detail/ce9a011a-a4dc-44e6-b462-17c8adbb0335/)
 
 ## Demo
 
-https://syappi66.github.io/IlluHuman/
+<https://syappi66.github.io/IlluHuman/>
 
 ## License
 
-TODO: Add license information.
+This project uses materials from the official Three.js examples, which are licensed under the MIT License.
