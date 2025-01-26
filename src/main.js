@@ -6,8 +6,6 @@ import { SpotLightController } from "./SpotLight";
 import { TextureController } from "./Texture";
 import { GuiStyler } from "./GUIStyle";
 
-
-
 class App {
   constructor() {
     // Create scene
@@ -44,7 +42,6 @@ class App {
     this.controls.target.set(0, 1, 0);
     this.controls.update();
 
-
     // // Lighting
     // const ambient = new THREE.HemisphereLight(0xffffff, 0x8d8d8d, 0.15);
     // this.scene.add(ambient);
@@ -52,18 +49,24 @@ class App {
     // Create ground
     this.createGround();
 
-
     // Initialize Spotlight Controller with different settings
-    this.spotlightController1 = new SpotLightController(this.scene, this.renderer, {
-      color: 0xd5f1ff, // blue
-      position: [5, 10, 5] // start point
-    });
+    this.spotlightController1 = new SpotLightController(
+      this.scene,
+      this.renderer,
+      {
+        color: 0xd5f1ff, // blue
+        position: [5, 10, 5], // start point
+      }
+    );
 
-    this.spotlightController2 = new SpotLightController(this.scene, this.renderer, {
-      color: 0xfffef4, // yellow
-      position: [-5, 8, -5] // start point
-    });
-
+    this.spotlightController2 = new SpotLightController(
+      this.scene,
+      this.renderer,
+      {
+        color: 0xfffef4, // yellow
+        position: [-5, 8, -5], // start point
+      }
+    );
 
     // Initialize Texture Controller
     this.textureController = new TextureController(this.renderer);
@@ -85,7 +88,7 @@ class App {
       "ectoparasitoid",
       "Michelle",
       "Soldier",
-      "Walking astronaut"
+      "Walking astronaut",
     ];
 
     // GUI settings
@@ -119,9 +122,8 @@ class App {
     const gui = new GUI();
 
     // Spotlight settings in GUI
-    this.spotlightController1.addToGUI(gui, '1');
-    this.spotlightController2.addToGUI(gui, '2');
-
+    this.spotlightController1.addToGUI(gui, "1");
+    this.spotlightController2.addToGUI(gui, "2");
 
     const textures = this.textureController.getTextures();
     const backgrounds = this.textureController.getBackgrounds();
@@ -130,59 +132,63 @@ class App {
     // this.scene.add(ambientLight);
 
     const params = {
-      'Model': this.models[0],
-      'Light Map': "none",
-      'Background': "none",
+      Model: this.models[0],
+      "Light Map": "none",
+      Background: "none",
       roughness: 0.5,
       metalness: 0.5,
       reflection: 0.5,
     };
 
     const modelFolder = gui.addFolder("Model");
-    modelFolder.add(params, "Model", this.models).onChange((value) => this.loadModel(value));
-    modelFolder.add(params, "Light Map", Object.keys(textures)).onChange((value) => {
-      this.spotlightController1.spotlight.map = textures[value];
-    });
-    modelFolder.add(params, "Background", Object.keys(backgrounds)).onChange((value) => {
-      this.textureController.switchBackground(this.scene, value);
-    });
-    modelFolder.open()
+    modelFolder
+      .add(params, "Model", this.models)
+      .onChange((value) => this.loadModel(value));
+    modelFolder
+      .add(params, "Light Map", Object.keys(textures))
+      .onChange((value) => {
+        this.spotlightController1.spotlight.map = textures[value];
+      });
+    modelFolder
+      .add(params, "Background", Object.keys(backgrounds))
+      .onChange((value) => {
+        this.textureController.switchBackground(this.scene, value);
+      });
+    modelFolder.open();
 
     //SSS
-    const sssFolder = gui.addFolder('Subsurface Scattering');
-    sssFolder.add(params, 'reflection', 0, 1).onChange((val) => {
-        if (this.currentModel) {
-            this.currentModel.traverse((child) => {
-                if (child.isMesh) {
-                    child.material.reflection = val;
-                }
-            });
-        }
+    const sssFolder = gui.addFolder("Subsurface Scattering");
+    sssFolder.add(params, "reflection", 0, 1).onChange((val) => {
+      if (this.currentModel) {
+        this.currentModel.traverse((child) => {
+          if (child.isMesh) {
+            child.material.reflection = val;
+          }
+        });
+      }
     });
-    sssFolder.add(params, 'roughness', 0, 1).onChange((val) => {
-        if (this.currentModel) {
-            this.currentModel.traverse((child) => {
-                if (child.isMesh) {
-                    child.material.roughness = val;
-                }
-            });
-        }
+    sssFolder.add(params, "roughness", 0, 1).onChange((val) => {
+      if (this.currentModel) {
+        this.currentModel.traverse((child) => {
+          if (child.isMesh) {
+            child.material.roughness = val;
+          }
+        });
+      }
     });
-    sssFolder.add(params, 'metalness', 0, 1).onChange((val) => {
-        if (this.currentModel) {
-            this.currentModel.traverse((child) => {
-                if (child.isMesh) {
-                    child.material.metalness = val;
-                }
-            });
-        }
+    sssFolder.add(params, "metalness", 0, 1).onChange((val) => {
+      if (this.currentModel) {
+        this.currentModel.traverse((child) => {
+          if (child.isMesh) {
+            child.material.metalness = val;
+          }
+        });
+      }
     });
-    sssFolder.open()
-    
+    sssFolder.open();
+
     //GUI style
     GuiStyler.styleExistingFolders(gui);
-
-   
   }
 
   loadModel(modelName) {
@@ -209,7 +215,6 @@ class App {
         }
       });
 
-
       this.currentModel.scale.set(1, 1, 1);
       this.currentModel.position.set(0, 0, 0);
       this.scene.add(this.currentModel);
@@ -234,8 +239,8 @@ class App {
     requestAnimationFrame(this.animate.bind(this));
 
     // Update Spotlight
-    this.spotlightController1.update('clock');
-    this.spotlightController2.update('anti');
+    this.spotlightController1.update("clock");
+    this.spotlightController2.update("anti");
 
     // Update controls
     this.controls.update();
