@@ -5,6 +5,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { SpotLightController } from "./SpotLight";
 import { TextureController } from "./Texture";
 import { GuiStyler } from "./GUIStyle";
+import { SSSController } from "./SSS";
 
 class App {
   constructor() {
@@ -42,7 +43,7 @@ class App {
     this.controls.target.set(0, 1, 0);
     this.controls.update();
 
-    // // Lighting
+    // Lighting
     // const ambient = new THREE.HemisphereLight(0xffffff, 0x8d8d8d, 0.15);
     // this.scene.add(ambient);
 
@@ -92,11 +93,18 @@ class App {
       "Walking astronaut",
     ];
 
-    // GUI settings
-    this.setupGUI();
-
     // Load initial model
     this.loadModel(this.models[0]);
+
+    // Initialize SSS Controller
+    this.sssController = new SSSController(
+      this.scene,
+      this.renderer,
+      this.currentModel
+    );
+
+    // GUI settings
+    this.setupGUI();
 
     // Handle window resize
     window.addEventListener("resize", this.onWindowResize.bind(this), false);
@@ -187,6 +195,9 @@ class App {
       }
     });
     sssFolder.open();
+
+    // SSS settings in GUI
+    this.sssController.addToGUI(gui);
 
     //GUI style
     GuiStyler.styleExistingFolders(gui);
