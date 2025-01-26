@@ -241,6 +241,11 @@ class App {
         } else {
           this.mixer = null;
         }
+
+        // Reapply SSS if enabled
+        if (this.sssController.params.enableSSS) {
+          this.sssController.applySSS(this.currentModel);
+        }
       });
     }
   }
