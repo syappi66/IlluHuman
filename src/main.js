@@ -81,6 +81,7 @@ class App {
 
     // Models and textures
     this.models = [
+      "Sphere", // For Debugging
       "Wave hand astronaut",
       "the queen of swords",
       "treeman",
@@ -202,31 +203,46 @@ class App {
       });
     }
 
-    this.loader.load(`./resources/models/gltf/${modelName}.glb`, (gltf) => {
-      if (!gltf) {
-        console.error(`Failed to load model: ${modelName}`);
-        return;
-      }
-      this.currentModel = gltf.scene;
-      this.currentModel.traverse((child) => {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
+    if (modelName === "Sphere") {
+      this.createSphere();
+    } else {
+      this.loader.load(`./resources/models/gltf/${modelName}.glb`, (gltf) => {
+        if (!gltf) {
+          console.error(`Failed to load model: ${modelName}`);
+          return;
+        }
+        this.currentModel = gltf.scene;
+        this.currentModel.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+
+        this.currentModel.scale.set(1, 1, 1);
+        this.currentModel.position.set(0, 0, 0);
+        this.scene.add(this.currentModel);
+
+        if (gltf.animations && gltf.animations.length > 0) {
+          this.mixer = new THREE.AnimationMixer(this.currentModel);
+          const action = this.mixer.clipAction(gltf.animations[0]);
+          action.play();
+        } else {
+          this.mixer = null;
         }
       });
+    }
+  }
 
-      this.currentModel.scale.set(1, 1, 1);
-      this.currentModel.position.set(0, 0, 0);
-      this.scene.add(this.currentModel);
-
-      if (gltf.animations && gltf.animations.length > 0) {
-        this.mixer = new THREE.AnimationMixer(this.currentModel);
-        const action = this.mixer.clipAction(gltf.animations[0]);
-        action.play();
-      } else {
-        this.mixer = null;
-      }
-    });
+  createSphere() {
+    const geometry = new THREE.SphereGeometry(1, 32, 32);
+    const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+    const sphere = new THREE.Mesh(geometry, material);
+    sphere.castShadow = true;
+    sphere.receiveShadow = true;
+    sphere.position.set(0, 3, 0);
+    this.currentModel = sphere;
+    this.scene.add(sphere);
   }
 
   onWindowResize() {
