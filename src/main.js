@@ -89,8 +89,8 @@ class App {
 
     // Models and textures
     this.models = [
-      "Sphere", // For Debugging
       "Wave hand astronaut",
+      "Sphere", // For Debugging
       "the queen of swords",
       "treeman",
       "santa muerte",
