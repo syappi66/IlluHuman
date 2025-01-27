@@ -14,7 +14,7 @@ This project aims to create an interactive 3D scene using Three.js that features
   - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
   - [Development](#development)
-- [Resource](#resource)
+  - [Resource](#resource)
   - [Demo](#demo)
   - [License](#license)
 
@@ -54,7 +54,7 @@ To build the project in the /dist folder, run the following command:
 npm run build
 ```
 
-# Resource
+## Resource
 
 <strong>Human Models</strong>
 
