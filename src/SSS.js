@@ -7,71 +7,44 @@ export class SSSController {
     this.renderer = renderer;
     this.model = model;
     this.uniforms = null;
-    this.lights = [];
-    this.originalMaterials = {};
+    this.originalMaterials = new Map();
 
     this.initMaterial();
 
-    // Initial parameter settings
     this.params = {
       enableSSS: false,
-      // map: this.uniforms["map"].value,
-      diffuse: this.uniforms["diffuse"].value.getHex(),
-      shininess: this.uniforms["shininess"].value,
-      // thicknessMap: this.uniforms["thicknessMap"].value,
-      thicknessColor: this.uniforms["thicknessColor"].value.getHex(),
-      distortion: this.uniforms["thicknessDistortion"].value,
-      ambient: this.uniforms["thicknessAmbient"].value,
-      attenuation: this.uniforms["thicknessAttenuation"].value,
-      power: this.uniforms["thicknessPower"].value,
-      scale: this.uniforms["thicknessScale"].value,
+      diffuse: this.uniforms.diffuse.value.getHex(),
+      shininess: this.uniforms.shininess.value,
+      thicknessColor: this.uniforms.thicknessColor.value.getHex(),
+      distortion: this.uniforms.thicknessDistortion.value,
+      ambient: this.uniforms.thicknessAmbient.value,
+      attenuation: this.uniforms.thicknessAttenuation.value,
+      power: this.uniforms.thicknessPower.value,
+      scale: this.uniforms.thicknessScale.value,
     };
   }
 
   initMaterial() {
-    const loader = new THREE.TextureLoader();
-    const imgTexture = loader.load("./resources/textures/white.jpg");
-    imgTexture.colorSpace = THREE.SRGBColorSpace;
-
-    const thicknessTexture = loader.load("./resources/textures/water.jpg");
-    imgTexture.wrapS = imgTexture.wrapT = THREE.RepeatWrapping;
-
     const shader = SubsurfaceScatteringShader;
     this.uniforms = THREE.UniformsUtils.clone(shader.uniforms);
 
-    this.uniforms["map"].value = imgTexture;
-    this.uniforms["diffuse"].value = new THREE.Color(1.0, 0.2, 0.2);
-    this.uniforms["shininess"].value = 500;
-    this.uniforms["thicknessMap"].value = thicknessTexture;
-    this.uniforms["thicknessColor"].value = new THREE.Color(0.5, 0.3, 0.0);
-    this.uniforms["thicknessDistortion"].value = 0.1;
-    this.uniforms["thicknessAmbient"].value = 0.4;
-    this.uniforms["thicknessAttenuation"].value = 0.8;
-    this.uniforms["thicknessPower"].value = 2.0;
-    this.uniforms["thicknessScale"].value = 16.0;
+    // デフォルト値の設定
+    this.uniforms.diffuse.value = new THREE.Color(1.0, 0.2, 0.2);
+    this.uniforms.shininess.value = 100;
+    this.uniforms.thicknessColor.value = new THREE.Color(0.5, 0.3, 0.0);
+    this.uniforms.thicknessDistortion.value = 0.5;
+    this.uniforms.thicknessAmbient.value = 0.01;
+    this.uniforms.thicknessAttenuation.value = 0.7;
+    this.uniforms.thicknessPower.value = 8.0;
+    this.uniforms.thicknessScale.value = 4.0;
+
+    // デフォルトのthicknessMap
+    this.uniforms.thicknessMap.value = new THREE.TextureLoader().load(
+      "./resources/textures/water.jpg"
+    );
   }
 
-  // Method to toggle SSS on/off
-  toggleSSS(enable) {
-    if (enable) {
-      console.log("Applying SSS"); // debug
-      this.applySSS(this.model);
-    } else {
-      console.log("Removing SSS"); // debug
-      this.removeSSS(this.model);
-    }
-  }
-
-  // Method to apply SSS material to a model
-  applySSS(model) {
-    // Save original materials
-    model.traverse((child) => {
-      if (child.isMesh) {
-        this.originalMaterials[child.uuid] = child.material;
-      }
-    });
-
-    // Apply SSS material
+  createSSSMaterial() {
     const material = new THREE.ShaderMaterial({
       uniforms: this.uniforms,
       vertexShader: SubsurfaceScatteringShader.vertexShader,
@@ -79,48 +52,68 @@ export class SSSController {
       lights: true,
     });
 
-    model.traverse((child) => {
+    return material;
+  }
+
+  toggleSSS(enable) {
+    if (enable) {
+      this.applySSS();
+    } else {
+      this.removeSSS();
+    }
+  }
+
+  applySSS() {
+    if (!this.model) return;
+
+    this.model.traverse((child) => {
       if (child.isMesh) {
-        child.material = material;
+        // オリジナルのマテリアルを保存
+        if (!this.originalMaterials.has(child.uuid)) {
+          this.originalMaterials.set(child.uuid, child.material);
+        }
+
+        // 新しいSSSマテリアルを作成して適用
+        child.material = this.createSSSMaterial();
       }
     });
   }
 
-  removeSSS(model) {
-    console.log("Removing SSS"); // debug
-    console.log(this.originalMaterials); // debug
+  removeSSS() {
+    if (!this.model) return;
 
-    // Restore original materials
-    model.traverse((child) => {
-      if (child.isMesh && this.originalMaterials[child.uuid]) {
-        child.material = this.originalMaterials[child.uuid];
+    this.model.traverse((child) => {
+      if (child.isMesh) {
+        const originalMaterial = this.originalMaterials.get(child.uuid);
+        if (originalMaterial) {
+          child.material = originalMaterial;
+        }
       }
     });
   }
 
   // Method to update uniforms
   updateUniforms(params) {
-    for (const [key, value] of Object.entries(params)) {
-      if (this.uniforms[key]) {
-        this.uniforms[key].value = value;
-      }
-    }
-  }
+    if (!this.model) return;
 
-  // Method to clean up resources
-  dispose() {
-    this.lights.forEach((light) => {
-      if (light.parent) {
-        light.parent.remove(light);
-      }
-      if (light.geometry) {
-        light.geometry.dispose();
-      }
-      if (light.material) {
-        light.material.dispose();
+    for (const [key, value] of Object.entries(params)) {
+      this.uniforms[key].value = value;
+    }
+
+    this.model.traverse((child) => {
+      if (child.isMesh && child.material.type === "ShaderMaterial") {
+        for (const [key, value] of Object.entries(params)) {
+          if (child.material.uniforms[key]) {
+            child.material.uniforms[key].value = value;
+          }
+        }
       }
     });
-    this.lights = [];
+  }
+
+  dispose() {
+    this.originalMaterials.clear();
+    this.model = null;
   }
 
   // Method to add SSS settings to GUI
@@ -135,35 +128,35 @@ export class SSSController {
       });
 
     sssFolder.addColor(this.params, "diffuse").onChange((val) => {
-      this.uniforms["diffuse"].value = new THREE.Color(val);
+      this.updateUniforms({ diffuse: new THREE.Color(val) });
     });
 
     sssFolder.add(this.params, "shininess", 0, 1000).onChange((val) => {
-      this.uniforms["shininess"].value = val;
+      this.updateUniforms({ shininess: val });
     });
 
     sssFolder.addColor(this.params, "thicknessColor").onChange((val) => {
-      this.uniforms["thicknessColor"].value = new THREE.Color(val);
+      this.updateUniforms({ thicknessColor: new THREE.Color(val) });
     });
 
     sssFolder.add(this.params, "distortion", 0.01, 1).onChange((val) => {
-      this.uniforms["thicknessDistortion"].value = val;
+      this.updateUniforms({ thicknessDistortion: val });
     });
 
-    sssFolder.add(this.params, "ambient", 0.01, 5.0).onChange((val) => {
-      this.uniforms["thicknessAmbient"].value = val;
+    sssFolder.add(this.params, "ambient", 0.0, 5.0).onChange((val) => {
+      this.updateUniforms({ thicknessAmbient: val });
     });
 
     sssFolder.add(this.params, "attenuation", 0.01, 5.0).onChange((val) => {
-      this.uniforms["thicknessAttenuation"].value = val;
+      this.updateUniforms({ thicknessAttenuation: val });
     });
 
     sssFolder.add(this.params, "power", 0.01, 16.0).onChange((val) => {
-      this.uniforms["thicknessPower"].value = val;
+      this.updateUniforms({ thicknessPower: val });
     });
 
     sssFolder.add(this.params, "scale", 0.01, 50.0).onChange((val) => {
-      this.uniforms["thicknessScale"].value = val;
+      this.updateUniforms({ thicknessScale: val });
     });
 
     sssFolder.open();

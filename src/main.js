@@ -72,6 +72,13 @@ class App {
     // Initialize Texture Controller
     this.textureController = new TextureController(this.renderer);
 
+    // Initialize SSS Controller
+    this.sssController = new SSSController(
+      this.scene,
+      this.renderer,
+      this.currentModel
+    );
+
     // Clock
     this.clock = new THREE.Clock();
 
@@ -95,13 +102,6 @@ class App {
 
     // Load initial model
     this.loadModel(this.models[0]);
-
-    // Initialize SSS Controller
-    this.sssController = new SSSController(
-      this.scene,
-      this.renderer,
-      this.currentModel
-    );
 
     // GUI settings
     this.setupGUI();
@@ -165,8 +165,8 @@ class App {
       });
     modelFolder.open();
 
-    //SSS
-    const sssFolder = gui.addFolder("Subsurface Scattering");
+    // Physical properties settings in GUI
+    const sssFolder = gui.addFolder("Physical Properties");
     sssFolder.add(params, "reflection", 0, 1).onChange((val) => {
       if (this.currentModel) {
         this.currentModel.traverse((child) => {
@@ -212,10 +212,16 @@ class App {
           child.material.dispose();
         }
       });
+      this.sssController.dispose();
     }
 
     if (modelName === "Sphere") {
-      this.createSphere();
+      const sphere = this.createSphere();
+      this.currentModel = sphere;
+      this.scene.add(sphere);
+
+      // Update SSSController
+      this.updateSSSController();
     } else {
       this.loader.load(`./resources/models/gltf/${modelName}.glb`, (gltf) => {
         if (!gltf) {
@@ -242,11 +248,18 @@ class App {
           this.mixer = null;
         }
 
-        // Reapply SSS if enabled
-        if (this.sssController.params.enableSSS) {
-          this.sssController.applySSS(this.currentModel);
-        }
+        // Update SSSController
+        this.updateSSSController();
       });
+    }
+  }
+
+  updateSSSController() {
+    // Update SSSController model
+    this.sssController.model = this.currentModel;
+    // Reapply SSS if enabled
+    if (this.sssController.params.enableSSS) {
+      this.sssController.applySSS(this.currentModel);
     }
   }
 
@@ -257,8 +270,7 @@ class App {
     sphere.castShadow = true;
     sphere.receiveShadow = true;
     sphere.position.set(0, 3, 0);
-    this.currentModel = sphere;
-    this.scene.add(sphere);
+    return sphere;
   }
 
   onWindowResize() {

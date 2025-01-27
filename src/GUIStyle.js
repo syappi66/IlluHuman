@@ -51,6 +51,9 @@ export class GuiStyler {
                 case "Model":
                     GuiStyler.applyStyleRecursively(folder, "#D1DEFF", "#B3C8FF", "#242C3F", "#131822"); // Elegant and soft purple-blue
                     break;
+                case "Physical Properties":
+                    GuiStyler.applyStyleRecursively(folder, "#FFD6C6", "#FFB8A8", "#3F2A24", "#1E1312"); // Warm and cozy light orange
+                    break;
                 case "Subsurface Scattering":
                     GuiStyler.applyStyleRecursively(folder, "#C6EEFF", "#A8E4FF", "#233340", "#121B26"); // Subtle and light sky blue
                     break;
